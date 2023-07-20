@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from numba import njit
 
 def identity():
     return np.array([
@@ -50,5 +51,7 @@ def scale(n):
         [0, 0, 0, 1]
     ])
 
-def cos_angle_between(v1, v2):
-    return np.dot(v1[:3], v2[:3]) / (np.linalg.norm(v1[:3]) * np.linalg.norm(v2[:3]))
+def get_cos_angle_between(v1, v2):
+    dot = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2]
+    mags = math.hypot(*v1[:3]) * math.hypot(*v2[:3])
+    return dot / mags

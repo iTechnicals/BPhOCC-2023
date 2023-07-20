@@ -40,7 +40,7 @@ def DistributeSegments(multilines, segment_allowance):
 class Point:
     def __init__(self, render, position, size, colour, moving, movement_function, preset_args):
         self.render = render
-        self.position = np.array([*position, 1.0]).astype(np.float32)
+        self.position = np.array([*position, 1.0])
         self.colour = colour
         self.size = size
         self.moving = moving
@@ -60,7 +60,7 @@ class Point:
         if self.moving:
             self.movement()
 
-        self.renderable = cos_angle_between(self.render.camera.forward, self.position - self.render.camera.position) > self.render.camera.cos_fov
+        self.renderable = self.render.camera.cos_angle_between(self.position - self.render.camera.position) > self.render.camera.cos_fov
 
         if self.renderable:
             position = self.position @ m
@@ -78,16 +78,18 @@ class Point:
 class PointlessLine:
     def __init__(self, render, point1, point2, parent):
         self.render = render
-        self.point1 = np.array([*point1, 1.0]).astype(np.float32)
+        self.point1 = np.array([*point1, 1.0])
         self.point1_projected = None
-        self.point2 = np.array([*point2, 1.0]).astype(np.float32)
+        self.point2 = np.array([*point2, 1.0])
         self.point2_projected = None
         self.parent = parent
         self.renderable = True
         self.screen_projection(self.render.m)
 
     def screen_projection(self, m):
-        self.renderable = cos_angle_between(self.render.camera.forward, self.point1 - self.render.camera.position) > self.render.camera.d_cos_fov and cos_angle_between(self.render.camera.forward, self.point2 - self.render.camera.position) > self.render.camera.d_cos_fov and (cos_angle_between(self.render.camera.forward, self.point1 - self.render.camera.position) > self.render.camera.cos_fov or cos_angle_between(self.render.camera.forward, self.point2 - self.render.camera.position) > self.render.camera.cos_fov) and not self.parent.colour.a == 0 and not self.parent.hidden
+        cos_angle_between_1 = self.render.camera.cos_angle_between(self.point1 - self.render.camera.position)
+        cos_angle_between_2 = self.render.camera.cos_angle_between(self.point2 - self.render.camera.position)
+        self.renderable = cos_angle_between_1 > self.render.camera.d_cos_fov and cos_angle_between_2 > self.render.camera.d_cos_fov and (cos_angle_between_1 > self.render.camera.cos_fov or cos_angle_between_2 > self.render.camera.cos_fov) and not self.parent.colour.a == 0 and not self.parent.hidden
         
         if self.renderable:
             position = self.point1 @ m
@@ -165,7 +167,7 @@ class MultiLine:
             # if self.render.new_second_flag:
             #     self.render.new_second_flag = False
             #     DistributeSegments(self.render.multilines, self.render.segment_allowance)
-                # [i.screen_projection(m) for j in self.render.multilines for i in j.sublines]
+            #     [i.screen_projection(m) for j in self.render.multilines for i in j.sublines]
         if self.fading:
             self.opacity = self.initial_opacity*self.fading_function((time.time() - self.creation_time)/self.duration)
             if self.opacity < 0 or self.opacity > 255:

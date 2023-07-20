@@ -2,7 +2,7 @@ import render.manager as manager
 import pygame as pg
 
 class Application:
-    def __init__(self, width, height, vp):
+    def __init__(self, width, height, vp = (0, 0)):
         # vp_coords = left, right
         pg.init()
         self.width, self.height = width, height
@@ -35,7 +35,7 @@ class Application:
         self.screen.blit(self.render.tick(), (self.viewport_right, 0))
 
         
-app = Application(768, 400, (0.2, 0.2))
+app = Application(768, 400)
 
 while True:
     # app.vp = ((abs(0.2 - (pg.time.get_ticks() % 2000)/5000)), (abs(0.2 - (pg.time.get_ticks() % 2000)/5000)))

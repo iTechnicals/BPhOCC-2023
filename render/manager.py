@@ -77,7 +77,7 @@ class Render:
                 self.points.append(Point(self, (0, 0, 0), 100*radius, clr_planet, True, ellipse, (a, b, beta, 1/(5*period), random())))
                 self.multilines.append(MultiLine(self, ellipse, (a, b, beta), 10, clr_orbit, 2, ellipse_length(a, ecc), 15))
 
-        self.segment_allowance = 500
+        self.segment_allowance = 1000
         # self.multilines = self.gridlines + self.orbits
         DistributeSegments(self.multilines, self.segment_allowance)
 

@@ -12,7 +12,7 @@ class Camera:
         self.cos_fov = math.cos(max(self.h_fov, self.v_fov))
         self.near_plane = 0.1
         self.far_plane = 100
-        self.move_speed = 0.05
+        self.move_speed = 0.02
         self.zoom_speed = 0.7
         self.up_sign = 1
 
@@ -28,7 +28,7 @@ class Camera:
 
         self.r = math.hypot(*self.position[:3])
 
-        angle_from_vertical = abs(cos_angle_between(self.position, [0, 0, 1]))
+        angle_from_vertical = abs(self.position[2]/self.r)
 
         if angle_from_vertical > 0.9999:
             self.move_speed = 0
@@ -99,3 +99,7 @@ class Camera:
             [rz, uz, fz, 0],
             [0, 0, 0, 1]
         ])
+
+    def cos_angle_between(self, v):
+        dot = self.forward[0] * v[0] + self.forward[1] * v[1] + self.forward[2] * v[2]
+        return dot / math.hypot(*v[:3])
