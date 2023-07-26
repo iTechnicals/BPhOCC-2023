@@ -13,7 +13,7 @@ class Camera:
         self.near_plane = 0.1
         self.far_plane = 100
         self.move_speed = 0.02
-        self.zoom_speed = 0.7
+        self.zoom_speed = 0.01
         self.up_sign = 1
 
         
@@ -30,12 +30,6 @@ class Camera:
 
         angle_from_vertical = abs(self.position[2]/self.r)
 
-        if angle_from_vertical > 0.9999:
-            self.move_speed = 0
-            self.position = np.array([-self.position[0]*2, -self.position[1]*2, self.position[2]/1.01, 1])
-            self.up_sign *= -1
-            self.move_speed = 0.1
-
         
         coords = pg.mouse.get_rel()
         if pg.mouse.get_pressed()[0]:
@@ -45,13 +39,19 @@ class Camera:
 
         self.position *= self.r / math.hypot(*self.position[:3])
 
+        if angle_from_vertical > 0.9999:
+            self.move_speed = 0
+            self.position = np.array([-self.position[0]*3, -self.position[1]*3, self.position[2]/1.01, 1])
+            self.up_sign *= -1
+            self.move_speed = 0.02
+        
 
         key = pg.key.get_pressed()
         if key[pg.K_s]:
-            self.position *= 1 + self.zoom_speed/fps
+            self.position *= 1 + self.zoom_speed
             moved = True
         if key[pg.K_w]:
-            self.position /= 1 + self.zoom_speed/fps
+            self.position /= 1 + self.zoom_speed
             moved = True
         
         self.forward = -self.position / self.r; self.forward[-1] = 1
@@ -63,7 +63,7 @@ class Camera:
 
     def camera_distance(self, object):
         if isinstance(object, objects.PointlessLine):
-            return max(math.hypot(*(self.position[:3] - object.point1[:3])), math.hypot(*(self.position[:3] - object.point2[:3]))) + 1
+            return max(math.hypot(*(self.position[:3] - self.render.points_table[object.point1_hash][:3])), math.hypot(*(self.position[:3] - self.render.points_table[object.point1_hash][:3]))) + 1
         if isinstance(object, objects.Point):
             return math.hypot(*(self.position[:3] - object.position[:3]))
     

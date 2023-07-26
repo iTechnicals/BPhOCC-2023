@@ -7,12 +7,10 @@ class Application:
         pg.init()
         self.width, self.height = width, height
         self.vp = vp
-        self.update_viewport(*vp)
         self.FPS = 60
         self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
         self.clock = pg.time.Clock()
-        self.render = manager.Render(self, self.viewport_width, self.viewport_height)
-
+        self.render = manager.Render(self, self.width*(1 - sum(vp)), self.height)
         self.tot = 0
         self.i = 0
 
@@ -20,10 +18,12 @@ class Application:
         self.viewport_right = right*self.width
         self.viewport_width = self.width*(1 - right - left)
         self.viewport_height = self.height
+        self.render.update_resolution()
 
     def update(self):
-        self.width, self.height = self.screen.get_size()
-        self.update_viewport(*self.vp)
+        if self.screen.get_size != (self.width, self.height):
+            self.width, self.height = self.screen.get_size()
+            self.update_viewport(*self.vp)
         self.render.width, self.render.height = self.viewport_width, self.viewport_height
 
         [exit() for i in pg.event.get() if i.type == pg.QUIT]

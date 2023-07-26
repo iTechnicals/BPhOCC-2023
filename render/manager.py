@@ -26,10 +26,10 @@ def line_length(p1, p2):
 
 class Render:
     def __init__(self, parent, width, height):
-        pg.init()
         self.width, self.height = width, height
         self.half_width, self.half_height = self.width // 2, self.height // 2
         self.parent = parent
+        self.secs = 0
         self.create_objects()
         self.camera.update_matrix()
 
@@ -37,6 +37,10 @@ class Render:
         self.camera = Camera(self, [2, 0, 100])
         self.projection = Projection(self)
         self.surface = pg.Surface((self.width, self.height))
+        self.stationary_points = 0
+        self.moving_points = 0
+
+        self.points_table = []
         
         self.projection.update_matrix()
         self.points = []
@@ -49,9 +53,9 @@ class Render:
             y_p2 = np.array([30, 5*i, 0])
 
             self.multilines.append(MultiLine(self, f = lerp, preset_args = (x_p1, x_p2), segments = 10, colour = (200, 200, 200, 100), thickness = 2,
-                                             length = line_length(x_p1, x_p2), min_segments = 6, max_segments = 50))
+                                             length = line_length(x_p1, x_p2), min_segments = 6, max_segments = 12))
             self.multilines.append(MultiLine(self, f = lerp, preset_args = (y_p1, y_p2), segments = 10, colour = (200, 200, 200, 100), thickness = 2,
-                                             length = line_length(y_p1, y_p2), min_segments = 6, max_segments = 50))
+                                             length = line_length(y_p1, y_p2), min_segments = 6, max_segments = 12))
             
         for i in range(-5, 6):
             
@@ -61,11 +65,11 @@ class Render:
             y_p2 = np.array([5, i, 0])
 
             self.multilines.append(MultiLine(self, f = lerp, preset_args = (x_p1, x_p2), segments = 10, colour = (200, 200, 200, 100), thickness = 2,
-                                             length = line_length(x_p1, x_p2), min_segments = 5, max_segments = 50))
+                                             length = line_length(x_p1, x_p2), min_segments = 5, max_segments = 12))
             self.multilines.append(MultiLine(self, f = lerp, preset_args = (y_p1, y_p2), segments = 10, colour = (200, 200, 200, 100), thickness = 2,
-                                             length = line_length(y_p1, y_p2), min_segments = 5, max_segments = 50))
+                                             length = line_length(y_p1, y_p2), min_segments = 5, max_segments = 12))
 
-        with open('C:/Users/Oliver/Documents/Coding/BPHO/render/data.json', newline='') as data:
+        with open('render/data.json', newline='') as data:
             contents = json.loads(data.read())["planets"]
             for row in contents:
 
@@ -74,28 +78,38 @@ class Render:
                 beta *= math.pi/180
                 b = a*math.sqrt(1 - ecc**2)
 
-                self.points.append(Point(self, (0, 0, 0), 100*radius, clr_planet, True, ellipse, (a, b, beta, 1/(5*period), random())))
-                self.multilines.append(MultiLine(self, ellipse, (a, b, beta), 10, clr_orbit, 2, ellipse_length(a, ecc), 15))
+                self.points.append(Point(self, (0, 0, 0), 100*radius, clr_planet, True, ellipse, (a, b, beta, 1/(5*period), random()), name))
+                self.multilines.append(MultiLine(self, ellipse, (a, b, beta), 50, clr_orbit, 2, ellipse_length(a, ecc), 15))
 
-        self.segment_allowance = 1000
+        self.segment_allowance = 3000
         # self.multilines = self.gridlines + self.orbits
-        DistributeSegments(self.multilines, self.segment_allowance)
+        # DistributeSegments(self, self.multilines, self.segment_allowance)
+        self.points_table = np.array(self.points_table)
+
+    def update_resolution(self):
+        self.surface = pg.transform.scale(self.surface, (self.width, self.height))
+        self.half_width, self.half_height = self.width // 2, self.height // 2
+        self.projection.update_matrix()
 
     def draw(self):
-        self.surface = pg.transform.scale(self.surface, (self.width, self.height))
-        if self.half_width != self.width // 2 or self.half_height != self.height // 2:
-            print("hello")
-            self.half_width, self.half_height = self.width // 2, self.height // 2
-            self.projection.update_matrix()
 
         for i in self.multilines[26:48]:
             i.colour.a = max(0, 2*int(50-math.hypot(*self.camera.position[:3])))
         
         self.surface.fill(pg.Color('#2A2D3E'))
 
-        projecting_objects = self.points + self.multilines
+        self.projected_points_table = self.points_table @ self.m
+        self.projected_points_table /= self.projected_points_table[:, -1].reshape(-1, 1)
+        self.projected_points_table = self.projected_points_table[:, :2]
+
+        self.cos_angle_between_table = (self.points_table - self.camera.position)[:, :3] @ self.camera.forward[:3]
+        self.cos_angle_between_table /= np.linalg.norm(self.points_table[:, :3], axis=1)
+
+        self.camera_distance_table = np.linalg.norm((self.points_table - self.camera.position)[:, :3], axis=1)
+
+        projecting_objects = self.points
         drawing_objects = self.points + [i for j in self.multilines for i in j.sublines]
-        drawing_objects.sort(reverse=True, key=self.camera.camera_distance)
+        drawing_objects.sort(reverse=True, key=lambda obj: obj.camera_distance())
 
         for i in projecting_objects:
             i.screen_projection(self.m)

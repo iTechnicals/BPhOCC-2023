@@ -5,40 +5,48 @@ import math
 import time
 from render.matrices import *
 
-def DistributeSegments(multilines, segment_allowance):
+# RENDER PIPELINE:
+# position = self.position @ m
+# position /= position[-1]
+# position = position[:2]
 
-    visible_multilines = [i for i in multilines if i.visible]
-    total_length = sum(i.length for i in visible_multilines)
-    visible_multilines.sort(key = lambda i: i.length)
-    segment_allocation = []
+# def DistributeSegments(render, multilines, segment_allowance):
 
-    for i in visible_multilines:
-        segments = math.floor(segment_allowance * i.length / total_length)
-        segments = max(segments, i.min_segments)
-        segments = min(segments, i.max_segments)
+#     render.points_table = []
+#     visible_multilines = [i for i in multilines if i.visible]
+#     total_length = sum(i.length for i in visible_multilines)
+#     visible_multilines.sort(key = lambda i: i.length)
+#     segment_allocation = []
 
-        segment_allocation.append(segments)
+#     for i in visible_multilines:
+#         segments = math.floor(segment_allowance * i.length / total_length)
+#         segments = max(segments, i.min_segments)
+#         segments = min(segments, i.max_segments)
 
-        segment_allowance -= segments
-        total_length -= i.length
+#         segment_allocation.append(segments)
 
-    if segment_allowance > 0:
-        total_length = sum(i.length for i in visible_multilines if i.max_segments >= 9999)
-        for i, j in enumerate(visible_multilines):
-            if j.max_segments >= 9999:
-                additional_segments = math.ceil(segment_allowance * j.length / total_length)
-                segment_allocation[i] += additional_segments
-                segment_allowance -= additional_segments
-                total_length -= j.length
-            if segment_allowance <= 0:
-                break
+#         segment_allowance -= segments
+#         total_length -= i.length
 
-    for i, j in enumerate(visible_multilines):
-        j.generate_sublines(segment_allocation[i])
+#     if segment_allowance > 0:
+#         total_length = sum(i.length for i in visible_multilines if i.max_segments >= 9999)
+#         for i, j in enumerate(visible_multilines):
+#             if j.max_segments >= 9999:
+#                 additional_segments = math.ceil(segment_allowance * j.length / total_length)
+#                 segment_allocation[i] += additional_segments
+#                 segment_allowance -= additional_segments
+#                 total_length -= j.length
+#             if segment_allowance <= 0:
+#                 break
+
+#     for i, j in enumerate(visible_multilines):
+#         j.generate_sublines(segment_allocation[i])
+
+#     render.points_table = np.array(render.points_table)
 
 
 class Point:
-    def __init__(self, render, position, size, colour, moving, movement_function, preset_args):
+    def __init__(self, render, position, size, colour, moving, movement_function, preset_args, id):
         self.render = render
         self.position = np.array([*position, 1.0])
         self.colour = colour
@@ -48,6 +56,7 @@ class Point:
         self.distance = None
         self.renderable = True
         self.preset_args = preset_args
+        self.id = id
 
         if self.moving:
             self.movement_function = movement_function
@@ -55,6 +64,9 @@ class Point:
 
     def movement(self):
         self.position = np.array([*self.movement_function(pg.time.get_ticks()/1000, *self.preset_args), 1.0])
+
+    def camera_distance(self):
+        return math.hypot(*(self.position[:3] - self.render.camera.position[:3]))
 
     def screen_projection(self, m):
         if self.moving:
@@ -67,6 +79,10 @@ class Point:
             position /= position[-1]
             position = position[:2]
 
+            
+
+            self.renderable = position[0] > -100 and position[0] < 2*self.render.width and position[1] > -100 and position[1] < 2*self.render.height
+
             self.projected = position
 
             self.distance = math.hypot(*(self.position[:3] - self.render.camera.position[:3]))
@@ -76,39 +92,26 @@ class Point:
             pg.draw.circle(self.render.surface, pg.Color(self.colour), self.projected, max(2, self.size/self.distance * self.render.width/1280))
 
 class PointlessLine:
-    def __init__(self, render, point1, point2, parent):
+    def __init__(self, render, point1_hash, point2_hash, parent):
         self.render = render
-        self.point1 = np.array([*point1, 1.0])
-        self.point1_projected = None
-        self.point2 = np.array([*point2, 1.0])
-        self.point2_projected = None
+        self.point1_hash = point1_hash
+        self.point2_hash = point2_hash
         self.parent = parent
         self.renderable = True
-        self.screen_projection(self.render.m)
 
-    def screen_projection(self, m):
-        cos_angle_between_1 = self.render.camera.cos_angle_between(self.point1 - self.render.camera.position)
-        cos_angle_between_2 = self.render.camera.cos_angle_between(self.point2 - self.render.camera.position)
-        self.renderable = cos_angle_between_1 > self.render.camera.d_cos_fov and cos_angle_between_2 > self.render.camera.d_cos_fov and (cos_angle_between_1 > self.render.camera.cos_fov or cos_angle_between_2 > self.render.camera.cos_fov) and not self.parent.colour.a == 0 and not self.parent.hidden
-        
-        if self.renderable:
-            position = self.point1 @ m
-            position /= position[-1]
-            position = position[:2]
-
-            self.point1_projected = position
-            
-            position = self.point2 @ m
-            position /= position[-1]
-            position = position[:2]
-
-            self.point2_projected = position
-        
+    def camera_distance(self):
+        return max(self.render.camera_distance_table[self.point1_hash], self.render.camera_distance_table[self.point1_hash]) + 1
 
     def draw(self):
+        # print(self.render.cos_angle_between_table[self.point1_hash], self.render.camera.cos_angle_between(self.render.points_table[self.point1_hash] - self.render.camera.position))
+        cos_angle_between_1 = self.render.cos_angle_between_table[self.point1_hash]
+        cos_angle_between_2 = self.render.cos_angle_between_table[self.point2_hash]
+        self.renderable = cos_angle_between_1 > self.render.camera.d_cos_fov and cos_angle_between_2 > self.render.camera.d_cos_fov and (cos_angle_between_1 > self.render.camera.cos_fov or cos_angle_between_2 > self.render.camera.cos_fov) and not self.parent.colour.a == 0 and not self.parent.hidden
+
         if self.renderable:
 
-            p1 = self.point1_projected; p2 = self.point2_projected
+            p1 = self.render.projected_points_table[self.point1_hash]
+            p2 = self.render.projected_points_table[self.point2_hash]
             d = (p2[0] - p1[0], p2[1] - p1[1])
             l = math.hypot(*d)
             sp = (-d[1] * self.parent.thickness/(2 * l), d[0] * self.parent.thickness/(2 * l))
@@ -149,29 +152,15 @@ class MultiLine:
     def generate_sublines(self, segments):
         self.segments = segments
         self.sublines = []
+        self.hash_start = len(self.render.points_table)
 
-        for i in range(self.segments):
+        for i in range(self.segments+1):
 
-            t1 = i / segments; t2 = (i + 1) / segments # TODO: stop overlapping at multiline join points
-            p1 = self.f(t1, *self.preset_args)
-            p2 = self.f(t2, *self.preset_args)
+            t = i / self.segments # TODO: stop overlapping at multiline join points
+            p = np.array([*self.f(t, *self.preset_args), 1.0])
+            self.render.points_table.append(p)
 
-            self.sublines.append(PointlessLine(self.render, p1, p2, self))
+            if i == self.segments:
+                break
 
-    def screen_projection(self, m):
-        for i in self.sublines:
-            i.screen_projection(m)
-        visibility = np.any([i.renderable for i in self.sublines])
-        if self.visible != visibility:
-            self.visible = visibility
-            # if self.render.new_second_flag:
-            #     self.render.new_second_flag = False
-            #     DistributeSegments(self.render.multilines, self.render.segment_allowance)
-            #     [i.screen_projection(m) for j in self.render.multilines for i in j.sublines]
-        if self.fading:
-            self.opacity = self.initial_opacity*self.fading_function((time.time() - self.creation_time)/self.duration)
-            if self.opacity < 0 or self.opacity > 255:
-                for i in self.sublines:
-                    del i                
-                self.render.multilines.remove(self)
-                del self
+            self.sublines.append(PointlessLine(self.render, self.hash_start + i, self.hash_start + i + 1, self))
