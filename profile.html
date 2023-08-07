@@ -7515,7 +7515,7 @@ Prism.languages.py = Prism.languages.python;
                 },
                 {
                     "end_region_line": 92,
-                    "line": "            pg.draw.circle(self.render.surface, pg.Color(self.colour), self.projected, max(2, self.size/self.distance * self.render.width/1280))\n",
+                    "line": "            pg.draw.circle(self.render.parent.viewport, pg.Color(self.colour), self.projected, max(2, self.size/self.distance * self.render.width/1280))\n",
                     "lineno": 92,
                     "memory_samples": [],
                     "n_avg_mb": 0.0,
@@ -8285,7 +8285,7 @@ Prism.languages.py = Prism.languages.python;
                 },
                 {
                     "end_region_line": 128,
-                    "line": "            pg.gfxdraw.aapolygon(self.render.surface, (UL, UR, BR, BL), colour)\n",
+                    "line": "            pg.gfxdraw.aapolygon(self.render.parent.viewport, (UL, UR, BR, BL), colour)\n",
                     "lineno": 127,
                     "memory_samples": [],
                     "n_avg_mb": 0.0,
@@ -8307,7 +8307,7 @@ Prism.languages.py = Prism.languages.python;
                 },
                 {
                     "end_region_line": 128,
-                    "line": "            pg.gfxdraw.filled_polygon(self.render.surface, (UL, UR, BR, BL), colour)\n",
+                    "line": "            pg.gfxdraw.filled_polygon(self.render.parent.viewport, (UL, UR, BR, BL), colour)\n",
                     "lineno": 128,
                     "memory_samples": [],
                     "n_avg_mb": 0.0,

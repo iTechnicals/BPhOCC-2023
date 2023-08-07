@@ -1,6 +1,5 @@
 import pygame as pg
 import pygame.gfxdraw
-from numba import njit
 import math
 import time
 from render.matrices import *
@@ -46,7 +45,9 @@ from render.matrices import *
 
 
 class Point:
-    def __init__(self, render, position, size, colour, moving, movement_function, preset_args, id):
+    def __init__(
+        self, render, position, size, colour, moving, movement_function, preset_args, id
+    ):
         self.render = render
         self.position = np.array([*position, 1.0])
         self.colour = colour
@@ -63,7 +64,12 @@ class Point:
             self.movement()
 
     def movement(self):
-        self.position = np.array([*self.movement_function(pg.time.get_ticks()/1000, *self.preset_args), 1.0])
+        self.position = np.array(
+            [
+                *self.movement_function(pg.time.get_ticks() / 1000, *self.preset_args),
+                1.0,
+            ]
+        )
 
     def camera_distance(self):
         return math.hypot(*(self.position[:3] - self.render.camera.position[:3]))
@@ -72,24 +78,48 @@ class Point:
         if self.moving:
             self.movement()
 
-        self.renderable = self.render.camera.cos_angle_between(self.position - self.render.camera.position) > self.render.camera.cos_fov
+        self.renderable = (
+            self.render.camera.cos_angle_between(
+                self.position - self.render.camera.position
+            )
+            > self.render.camera.cos_fov
+        )
 
         if self.renderable:
             position = self.position @ m
             position /= position[-1]
             position = position[:2]
 
-            
-
-            self.renderable = position[0] > -100 and position[0] < 2*self.render.width and position[1] > -100 and position[1] < 2*self.render.height
+            self.renderable = (
+                position[0] > -100
+                and position[0] < 2 * self.render.width
+                and position[1] > -100
+                and position[1] < 2 * self.render.height
+            )
 
             self.projected = position
 
-            self.distance = math.hypot(*(self.position[:3] - self.render.camera.position[:3]))
+            self.distance = math.hypot(
+                *(self.position[:3] - self.render.camera.position[:3])
+            )
 
     def draw(self):
         if self.renderable:
-            pg.draw.circle(self.render.surface, pg.Color(self.colour), self.projected, max(2, self.size/self.distance * self.render.width/1280))
+            pg.gfxdraw.aacircle(
+                self.render.parent.viewport,
+                int(self.projected[0]),
+                int(self.projected[1]),
+                max(2, int(self.size / self.distance * self.render.width / 1280)),
+                pg.Color(self.colour),
+            )
+            pg.gfxdraw.filled_circle(
+                self.render.parent.viewport,
+                int(self.projected[0]),
+                int(self.projected[1]),
+                max(2, int(self.size / self.distance * self.render.width / 1280)),
+                pg.Color(self.colour),
+            )
+
 
 class PointlessLine:
     def __init__(self, render, point1_hash, point2_hash, parent):
@@ -100,21 +130,38 @@ class PointlessLine:
         self.renderable = True
 
     def camera_distance(self):
-        return max(self.render.camera_distance_table[self.point1_hash], self.render.camera_distance_table[self.point1_hash]) + 1
+        return (
+            max(
+                self.render.camera_distance_table[self.point1_hash],
+                self.render.camera_distance_table[self.point1_hash],
+            )
+            + 1
+        )
 
     def draw(self):
         # print(self.render.cos_angle_between_table[self.point1_hash], self.render.camera.cos_angle_between(self.render.points_table[self.point1_hash] - self.render.camera.position))
         cos_angle_between_1 = self.render.cos_angle_between_table[self.point1_hash]
         cos_angle_between_2 = self.render.cos_angle_between_table[self.point2_hash]
-        self.renderable = cos_angle_between_1 > self.render.camera.d_cos_fov and cos_angle_between_2 > self.render.camera.d_cos_fov and (cos_angle_between_1 > self.render.camera.cos_fov or cos_angle_between_2 > self.render.camera.cos_fov) and not self.parent.colour.a == 0 and not self.parent.hidden
+        self.renderable = (
+            cos_angle_between_1 > self.render.camera.d_cos_fov
+            and cos_angle_between_2 > self.render.camera.d_cos_fov
+            and (
+                cos_angle_between_1 > self.render.camera.cos_fov
+                or cos_angle_between_2 > self.render.camera.cos_fov
+            )
+            and not self.parent.colour.a == 0
+            and not self.parent.hidden
+        )
 
         if self.renderable:
-
             p1 = self.render.projected_points_table[self.point1_hash]
             p2 = self.render.projected_points_table[self.point2_hash]
             d = (p2[0] - p1[0], p2[1] - p1[1])
             l = math.hypot(*d)
-            sp = (-d[1] * self.parent.thickness/(2 * l), d[0] * self.parent.thickness/(2 * l))
+            sp = (
+                -d[1] * self.parent.thickness / (2 * l),
+                d[0] * self.parent.thickness / (2 * l),
+            )
 
             UL = (p1[0] - sp[0], p1[1] - sp[1])
             UR = (p1[0] + sp[0], p1[1] + sp[1])
@@ -124,11 +171,26 @@ class PointlessLine:
             colour = self.parent.colour
             if self.parent.fading:
                 colour.a = int(self.parent.opacity)
-            pg.gfxdraw.aapolygon(self.render.surface, (UL, UR, BR, BL), colour)
-            pg.gfxdraw.filled_polygon(self.render.surface, (UL, UR, BR, BL), colour)
+            pg.gfxdraw.aapolygon(self.render.parent.viewport, (UL, UR, BR, BL), colour)
+            pg.gfxdraw.filled_polygon(self.render.parent.viewport, (UL, UR, BR, BL), colour)
+
 
 class MultiLine:
-    def __init__(self, render, f, preset_args, segments, colour, thickness = 2, length = None, min_segments = 0, max_segments = 9999, fading = False, duration = 0, fading_function = lambda x : 1 - x):
+    def __init__(
+        self,
+        render,
+        f,
+        preset_args,
+        segments,
+        colour,
+        thickness=2,
+        length=None,
+        min_segments=0,
+        max_segments=9999,
+        fading=False,
+        duration=0,
+        fading_function=lambda x: 1 - x,
+    ):
         self.render = render
         self.f = f
         self.preset_args = preset_args
@@ -154,13 +216,16 @@ class MultiLine:
         self.sublines = []
         self.hash_start = len(self.render.points_table)
 
-        for i in range(self.segments+1):
-
-            t = i / self.segments # TODO: stop overlapping at multiline join points
+        for i in range(self.segments + 1):
+            t = i / self.segments  # TODO: stop overlapping at multiline join points
             p = np.array([*self.f(t, *self.preset_args), 1.0])
             self.render.points_table.append(p)
 
             if i == self.segments:
                 break
 
-            self.sublines.append(PointlessLine(self.render, self.hash_start + i, self.hash_start + i + 1, self))
+            self.sublines.append(
+                PointlessLine(
+                    self.render, self.hash_start + i, self.hash_start + i + 1, self
+                )
+            )
