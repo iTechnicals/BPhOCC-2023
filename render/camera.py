@@ -49,7 +49,7 @@ class Camera:
                 ]
             )
             self.up_sign *= -1
-            self.move_speed = 0.02
+            self.move_speed = 10
 
         key = pg.key.get_pressed()
         if key[pg.K_s]:
