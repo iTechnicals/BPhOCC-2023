@@ -219,7 +219,7 @@ class MultiLine:
         for i in range(self.segments + 1):
             t = i / self.segments  # TODO: stop overlapping at multiline join points
             p = np.array([*self.f(t, *self.preset_args), 1.0])
-            self.render.points_table.append(p)
+            self.render.points_table = np.append(self.render.points_table, np.array([p]), axis=0)
 
             if i == self.segments:
                 break

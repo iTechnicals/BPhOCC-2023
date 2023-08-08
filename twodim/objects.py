@@ -18,6 +18,12 @@ class Pane:
         self.easing = False
         self.t = 0
 
+        self.children = []
+
+        self.update()
+        self.update_resolution()
+        self.draw()
+
     def start_ease(self):
         self.easing = True
         self.start_time = pg.time.get_ticks()
@@ -58,11 +64,14 @@ class Pane:
 
     def draw(self):
         self.surface.fill(self.colour)
-        self.parent.parent.screen.blit(self.surface, self.t*self.on_blit + (1 - self.t)*self.off_blit)
+        [child.update() for child in self.children]
+        [child.draw() for child in self.children]
+        self.blit = self.t*self.on_blit + (1 - self.t)*self.off_blit
+        self.parent.parent.screen.blit(self.surface, self.blit)
 
 
 class Button:
-    def __init__(self, parent, centre_pos, texture_path, anchor="top_left", positioning="absolute", width=None, pane=None, turn_on_func=lambda: None, turn_off_func=lambda: None):
+    def __init__(self, parent, centre_pos, texture_path, anchor="top_left", positioning="absolute", widths=None, pane=None, turn_on_func=lambda: None, turn_off_func=lambda: None):
         self.parent = parent
         self.anchor = anchor
         self.offset_centre_pos = centre_pos
@@ -77,12 +86,14 @@ class Button:
         self.down_texture = pg.image.load(texture_path + "/pressed.png")
 
         if self.positioning == "relative":
-            self.width = width
+            self.widths = widths
             self.base_neutral_texture = self.neutral_texture
             self.base_hover_texture = self.hover_texture
             self.base_down_texture = self.down_texture
 
         self.texture = self.neutral_texture
+
+        self.update_resolution()
 
     def update_resolution(self):
 
@@ -98,10 +109,11 @@ class Button:
                     case "bottom_right":
                         self.centre_pos = (self.parent.parent.viewport_width + self.offset_centre_pos[0], self.parent.parent.viewport_height + self.offset_centre_pos[1])
             case "relative":
-                self.neutral_texture = pg.transform.smoothscale(self.base_neutral_texture, (self.width * self.parent.parent.viewport_width, self.width * self.parent.parent.viewport_width * self.base_neutral_texture.get_height() / self.base_neutral_texture.get_width()))
-                self.hover_texture = pg.transform.smoothscale(self.base_hover_texture, (self.width * self.parent.parent.viewport_width, self.width * self.parent.parent.viewport_width * self.base_hover_texture.get_height() / self.base_hover_texture.get_width()))
-                self.down_texture = pg.transform.smoothscale(self.base_down_texture, (self.width * self.parent.parent.viewport_width, self.width * self.parent.parent.viewport_width * self.base_down_texture.get_height() / self.base_down_texture.get_width()))
-                self.abs_centre_pos = (self.offset_centre_pos[0] * self.parent.parent.viewport_width, self.offset_centre_pos[1] * self.parent.parent.viewport_width)
+                parent_width = self.pane.surface.get_width() if self.pane else self.parent.parent.viewport_width
+                self.neutral_texture = pg.transform.smoothscale(self.base_neutral_texture, (self.widths[0] * parent_width, self.widths[0] * parent_width * self.base_neutral_texture.get_height() / self.base_neutral_texture.get_width()))
+                self.hover_texture = pg.transform.smoothscale(self.base_hover_texture, (self.widths[1] * parent_width, self.widths[1] * parent_width * self.base_hover_texture.get_height() / self.base_hover_texture.get_width()))
+                self.down_texture = pg.transform.smoothscale(self.base_down_texture, (self.widths[2] * parent_width, self.widths[2] * parent_width * self.base_down_texture.get_height() / self.base_down_texture.get_width()))
+                self.abs_centre_pos = (self.offset_centre_pos[0] * parent_width, self.offset_centre_pos[1] * parent_width)
                 match self.anchor:
                     case "top_left":
                         self.centre_pos = self.abs_centre_pos

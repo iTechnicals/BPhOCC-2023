@@ -47,7 +47,7 @@ class Render:
         self.stationary_points = 0
         self.moving_points = 0
 
-        self.points_table = []
+        self.points_table = np.array([[0, 0, 0, 0]])
 
         self.projection.update_matrix()
         self.points = []
@@ -164,7 +164,6 @@ class Render:
         self.segment_allowance = 3000
         # self.multilines = self.gridlines + self.orbits
         # DistributeSegments(self, self.multilines, self.segment_allowance)
-        self.points_table = np.array(self.points_table)
 
     def update_resolution(self):
         self.parent.viewport = pg.transform.scale(self.parent.viewport, (self.width, self.height))
@@ -201,3 +200,6 @@ class Render:
     def tick(self):
         self.camera.control()
         self.draw()
+
+        # if pg.time.get_ticks() % 1000 != (pg.time.get_ticks() - 20) % 1000:
+        #     self.multilines.append(MultiLine(self, lerp, (self.points[0].position[:3], self.points[1].position[:3]), 1, "#FFFFFF33", thickness=1))
