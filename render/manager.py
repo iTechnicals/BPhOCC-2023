@@ -171,6 +171,9 @@ class Render:
         self.projection.update_matrix()
 
     def draw(self):
+        
+        self.parent.viewport.fill(pg.Color("#2C3040"))
+
         for i in self.multilines[26:48]:
             i.colour.a = max(0, 2 * int(50 - math.hypot(*self.camera.position[:3])))
 

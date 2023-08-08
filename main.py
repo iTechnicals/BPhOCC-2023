@@ -1,5 +1,6 @@
 import render.manager as render_manager
 import twodim.manager as twodim_manager
+import plotter.manager as plotter_manager
 import pygame as pg
 
 
@@ -22,6 +23,7 @@ class Application:
 
         self.render = render_manager.Render(self, self.width * (1 - sum(vp)), self.height)
         self.twodim_elements = twodim_manager.Manager(self)
+        self.plotter = plotter_manager.Plotter(self)
 
     def update_viewport(self, left, right, top, bottom):
         self.blit = (self.width * left, self.height * top)
@@ -44,6 +46,7 @@ class Application:
         pg.display.update()
         self.clock.tick(self.FPS)
 
+        
         self.viewport.fill(pg.Color("#2C3040"))
         self.screen.fill(pg.Color("#2C3040"))
 
@@ -51,6 +54,7 @@ class Application:
             self.render.tick()
             self.twodim_elements.tick()
         else:
+            self.plotter.tick()
             self.twodim_elements.tick()
         self.screen.blit(self.viewport, self.blit)
 

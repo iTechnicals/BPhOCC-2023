@@ -16,6 +16,8 @@ class Manager:
 
     def set_showing(self, showing):
         self.parent.showing = showing
+        if showing == "graph":
+            self.parent.plotter.animate()
 
     def create_objects(self):
         self.panes = []
