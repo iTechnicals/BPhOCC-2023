@@ -109,14 +109,14 @@ class Point:
                 self.render.parent.viewport,
                 int(self.projected[0]),
                 int(self.projected[1]),
-                max(2, int(self.size / self.distance * self.render.width / 1280)),
+                max(2, int(self.size / self.distance * math.sqrt(self.render.width * self.render.height) / 960)),
                 pg.Color(self.colour),
             )
             pg.gfxdraw.filled_circle(
                 self.render.parent.viewport,
                 int(self.projected[0]),
                 int(self.projected[1]),
-                max(2, int(self.size / self.distance * self.render.width / 1280)),
+                max(2, int(self.size / self.distance * math.sqrt(self.render.width * self.render.height) / 960)),
                 pg.Color(self.colour),
             )
 

@@ -17,23 +17,25 @@ class Application:
 
         self.showing = "graph"
 
-        self.blit = (self.width * vp[0], self.height * vp[2])
+        self.blit_coords = (self.width * vp[0], self.height * vp[2])
         self.viewport_width = self.width * (1 - vp[0] - vp[1])
         self.viewport_height = self.height * (1 - vp[2] - vp[3])
 
         self.render = render_manager.Render(self, self.width * (1 - sum(vp)), self.height)
         self.twodim_elements = twodim_manager.Manager(self)
-        self.plotter = plotter_manager.Plotter(self)
+        self.plotter = plotter_manager.Plotter(self, (0.1, 0.9), (0.9, 0.1))
 
     def update_viewport(self, left, right, top, bottom):
-        self.blit = (self.width * left, self.height * top)
+        self.blit_coords = (self.width * left, self.height * top)
         self.viewport_width = self.width * (1 - right - left)
         self.viewport_height = self.height * (1 - top - bottom)
+        self.viewport = pg.transform.scale(self.viewport, (self.viewport_width, self.viewport_height))
         self.render.update_resolution()
         self.twodim_elements.update_resolution()
+        self.plotter.update_resolution()
 
     def update(self):
-        if self.screen.get_size != (self.width, self.height):
+        if self.screen.get_size() != (self.width, self.height):
             self.width, self.height = self.screen.get_size()
             self.update_viewport(*self.vp)
         self.render.width, self.render.height = (
@@ -56,7 +58,8 @@ class Application:
         else:
             self.plotter.tick()
             self.twodim_elements.tick()
-        self.screen.blit(self.viewport, self.blit)
+
+        self.screen.blit(self.viewport, self.blit_coords)
 
 
 app = Application(768, 400)

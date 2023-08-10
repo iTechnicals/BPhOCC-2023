@@ -119,7 +119,7 @@ class Render:
                 )
             )
 
-        with open("render/data.json", newline="") as data:
+        with open("data.json", newline="") as data:
             contents = json.loads(data.read())["planets"]
             for row in contents:
                 name, clr_planet, clr_orbit, a, ecc, beta, period, radius = (
@@ -166,7 +166,6 @@ class Render:
         # DistributeSegments(self, self.multilines, self.segment_allowance)
 
     def update_resolution(self):
-        self.parent.viewport = pg.transform.scale(self.parent.viewport, (self.width, self.height))
         self.half_width, self.half_height = self.width // 2, self.height // 2
         self.projection.update_matrix()
 

@@ -63,11 +63,14 @@ class Pane:
                 self.on_blit = np.array([0, (1 - self.thickness) * self.parent.parent.height])
 
     def draw(self):
+
         self.surface.fill(self.colour)
+
         [child.update() for child in self.children]
         [child.draw() for child in self.children]
-        self.blit = self.t*self.on_blit + (1 - self.t)*self.off_blit
-        self.parent.parent.screen.blit(self.surface, self.blit)
+        self.blit_coords = self.t*self.on_blit + (1 - self.t)*self.off_blit
+        
+        self.parent.parent.screen.blit(self.surface, self.blit_coords)
 
 
 class Button:
@@ -126,9 +129,9 @@ class Button:
 
         self.top_left = (self.centre_pos[0] - (self.texture.get_width() - 1)/2, self.centre_pos[1] - (self.texture.get_height() - 1)/2)
         if self.pane:
-            self.abs_top_left = (self.top_left[0] + self.pane.blit[0], self.top_left[1] + self.pane.blit[1])
+            self.abs_top_left = (self.top_left[0] + self.pane.blit_coords[0], self.top_left[1] + self.pane.blit_coords[1])
         else:
-            self.abs_top_left = (self.top_left[0] + self.parent.parent.blit[0], self.top_left[1] + self.parent.parent.blit[1])
+            self.abs_top_left = (self.top_left[0] + self.parent.parent.blit_coords[0], self.top_left[1] + self.parent.parent.blit_coords[1])
 
     def update(self):
         

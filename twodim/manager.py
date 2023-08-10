@@ -32,7 +32,8 @@ class Manager:
 
     def tick(self):
         [i.update() for i in self.panes + self.buttons]
-        [i.draw() for i in self.panes]
+        for pane in self.panes:
+            pane.draw()
         [i.draw() for i in self.buttons]
 
     def update_resolution(self):
