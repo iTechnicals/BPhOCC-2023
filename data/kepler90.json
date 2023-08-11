@@ -1,0 +1,80 @@
+{
+  "star": {
+      "name": "Kepler-90",
+      "radius": 130.8
+  },
+  "planets": {
+      "Kepler-90b": {
+          "planet_colour": "#1A1A1A",
+          "orbit_colour": "#0D0D0D",
+          "semimajor": 2.22,
+          "eccentricity": 0,
+          "beta": 0.6,
+          "period": 2.33,
+          "radius": 1.31
+      },
+      "Kepler-90c": {
+          "planet_colour": "#737349",
+          "orbit_colour": "#1A1A1A",
+          "semimajor": 2.67,
+          "eccentricity": 0,
+          "beta": 0.32,
+          "period": 2.90,
+          "radius": 1.18
+      },
+      "Kepler-90i": {
+          "planet_colour": "#5ED6D4",
+          "orbit_colour": "#2F6A69",
+          "semimajor": 3.21,
+          "eccentricity": 0,
+          "beta": 0.8,
+          "period": 4.81,
+          "radius": 1.32
+      },
+      "Kepler-90d": {
+          "planet_colour": "#993D00",
+          "orbit_colour": "#4D1F00",
+          "semimajor": 9.6,
+          "eccentricity": 0,
+          "beta": 0.29,
+          "period": 19.9,
+          "radius": 2.88
+      },
+      "Kepler-90e": {
+          "planet_colour": "#B07F35",
+          "orbit_colour": "#573E1A",
+          "semimajor": 12.6,
+          "eccentricity": 0,
+          "beta": 0.21,
+          "period": 30.6,
+          "radius": 2.67
+      },
+      "Kepler-90f": {
+          "planet_colour": "#B08F36",
+          "orbit_colour": "#57471B",
+          "semimajor": 14.4,
+          "eccentricity": 0.01,
+          "beta": 0.23,
+          "period": 41.6,
+          "radius": 2.89
+      },
+      "Kepler-90g": {
+          "planet_colour": "#5580AA",
+          "orbit_colour": "#2A3F54",
+          "semimajor": 21.3,
+          "eccentricity": 0.049,
+          "beta": 0.08,
+          "period": 70.2,
+          "radius": 8.13
+      },
+      "Kepler-90h": {
+          "planet_colour": "#366896",
+          "orbit_colour": "#1C354D",
+          "semimajor": 30.3,
+          "eccentricity": 0.011,
+          "beta": 0.08,
+          "period": 110.5,
+          "radius": 11.32
+      }
+  }
+}

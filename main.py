@@ -11,9 +11,10 @@ class Application:
         self.width, self.height = width, height
         self.vp = vp
         self.FPS = 60
-        self.screen = pg.display.set_mode((self.width, self.height), pg.RESIZABLE)
+        self.screen = pg.display.set_mode((0, 0), pg.RESIZABLE, pg.FULLSCREEN)
         self.viewport = pg.Surface((self.width, self.height))
         self.clock = pg.time.Clock()
+        self.mod = 0
 
         self.showing = "graph"
 
@@ -30,6 +31,7 @@ class Application:
         self.viewport_width = self.width * (1 - right - left)
         self.viewport_height = self.height * (1 - top - bottom)
         self.viewport = pg.transform.scale(self.viewport, (self.viewport_width, self.viewport_height))
+        self.render.width, self.render.height = self.viewport_width, self.viewport_height
         self.render.update_resolution()
         self.twodim_elements.update_resolution()
         self.plotter.update_resolution()
@@ -38,10 +40,6 @@ class Application:
         if self.screen.get_size() != (self.width, self.height):
             self.width, self.height = self.screen.get_size()
             self.update_viewport(*self.vp)
-        self.render.width, self.render.height = (
-            self.viewport_width,
-            self.viewport_height,
-        )
 
         [exit() for i in pg.event.get() if i.type == pg.QUIT]
         pg.display.set_caption(str(self.clock.get_fps()))

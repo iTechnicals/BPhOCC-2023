@@ -20,6 +20,10 @@ class Plotter:
         self.create_objects()
         self.tick()
 
+    def set_visible_plot(self, plot):
+        self.visible_plot = plot
+        self.animate()
+
     def create_objects(self):
         semimajors = []
         periods = []
@@ -30,9 +34,8 @@ class Plotter:
 
         with open("data.json", newline="") as data:
             contents = json.loads(data.read())["planets"]
-            for row in contents:
-                name, clr_planet, clr_orbit, a, ecc, beta, period, radius = (
-                    row["name"],
+            for name, row in contents.items():
+                clr_planet, clr_orbit, a, ecc, beta, period, radius = (
                     row["planet_colour"],
                     row["orbit_colour"],
                     row["semimajor"],
@@ -44,27 +47,26 @@ class Plotter:
                 semimajors.append(a)
                 periods.append(period)
 
-        self.visible_plot = "polar"
+        self.visible_plot = "K3_raw"
 
-        self.make_plot("K3_raw", (semimajors, periods))
-        self.make_plot("K3_lin", (semimajors, periods))
-        self.make_plot("polar", (period, ecc))
+        self.make_plot("K3_raw", (semimajors, periods), ("Semi-major axis / AU", "Orbital period / yr"))
+        self.make_plot("K3_lin", (semimajors, periods), ("Semi-major axis ^ 3/2 / AU ^ 3/2", "Orbital period / yr"))
+        self.make_plot("polar", (period, ecc), ("Time / yr", "Orbit angle / rad"))
 
-        print("hello")
+        self.animate()
 
-        # self.animate()
-
-    def make_plot(self, key, args):
+    def make_plot(self, key, args, labels):
         match key:
             case "K3_raw":
-                self.plot_points("K3_raw", list(zip(args[0], args[1])), colour="#8A9BCC", make_graph=True)
+                self.plot_line("K3_raw", lambda x: pow(args[1][-1], 2/3) / args[0][-1] * pow(x, 3/2), (), (0, args[0][-1]), colour="#687599", thickness=2, make_graph=True, labels=labels)
+                self.plot_points("K3_raw", list(zip(args[0], args[1])), colour="#8A9BCC", line=None)
             case "K3_lin":
-                self.plot_points("K3_lin", list(zip([pow(a, 3/2) for a in args[0]], args[1])), colour="#8A9BCC", make_graph=True)
+                self.plot_points("K3_lin", list(zip([pow(a, 3/2) for a in args[0]], args[1])), colour="#8A9BCC", make_graph=True, labels=labels, degree=1)
             case "polar":
-                self.plot_line("polar", lambda x: args[0] * x / (2 * math.pi), (), (0, 6 * math.pi), colour="#687599", thickness=2, make_graph=True, reverse=True)
+                self.plot_line("polar", lambda x: args[0] * x / (2 * math.pi), (), (0, 6 * math.pi), colour="#687599", thickness=2, make_graph=True, labels=labels, reverse=True)
                 self.plot_line("polar", orbit_angle, (args[0], args[1]), (0, 6 * math.pi), colour="#8A9BCC", thickness=2, reverse=True)
 
-    def make_graph(self, plot, points):
+    def make_graph(self, plot, points, labels):
         self.x_gridlines = self.decide_gridlines([point[0] for point in points])
         self.y_gridlines = self.decide_gridlines([point[1] for point in points])
         self.gridlines = self.make_gridlines(plot, vertical_gridlines=self.y_gridlines[1], horizontal_gridlines=self.x_gridlines[1])
@@ -75,9 +77,14 @@ class Plotter:
         for i in range(self.y_gridlines[1] + 1):
             self.plots[plot].append(Text(self, str(self.y_gridlines[0] + i*self.y_gridlines[2]), (self.bottom_left[0] - 0.03 * self.parent.viewport_height / self.parent.viewport_width, self.bottom_left[1] * (1 - i / self.y_gridlines[1]) + self.top_right[1] * i / self.y_gridlines[1]), "#8A9BCC", "Segoe UI", 16, bold=True, relative=True))
 
-    def plot_points(self, plot, points, colour="#FFFFFF", thickness=5, plot_type="o", line="best_fit", degree=2, make_graph=False):
+        if labels:
+            self.plots[plot].append(Text(self, labels[0], ((self.bottom_left[0] + self.top_right[0])/2, self.bottom_left[1] + 0.06), "#8A9BCC", "Segoe UI", 16, bold=True, relative=True))
+            self.plots[plot].append(Text(self, labels[1], (self.bottom_left[0] - 0.06 * self.parent.viewport_height / self.parent.viewport_width, (self.bottom_left[1] + self.top_right[1])/2), "#8A9BCC", "Segoe UI", 16, rotation=90, bold=True, relative=True))
+
+
+    def plot_points(self, plot, points, colour="#FFFFFF", thickness=5, plot_type="o", line="best_fit", degree=2, make_graph=False, labels=None):
         if make_graph:
-            self.make_graph(plot, points)
+            self.make_graph(plot, points, labels)
         
         for point in points:
             point_x = self.bottom_left[0] + (point[0] - self.x_gridlines[0]) * self.width / (self.x_gridlines[1] * self.x_gridlines[2])
@@ -89,7 +96,7 @@ class Plotter:
                 sols = regress(points, degree)
                 self.plot_line(plot, cfcs_to_func, (sols,), (min([point[0] for point in points]), max([point[0] for point in points])), colour, thickness // 2, lines=1 if degree == 1 else 50)
 
-    def plot_line(self, plot, func, preset_args, x_interval, colour, thickness, lines=50, make_graph=False, reverse=False):
+    def plot_line(self, plot, func, preset_args, x_interval, colour, thickness, lines=50, make_graph=False, labels=None, reverse=False):
         
         points = []
         for point in range(lines+1):
@@ -99,7 +106,7 @@ class Plotter:
             points.append([point_y, point_x] if reverse else [point_x, point_y])
 
         if make_graph:
-            self.make_graph(plot, points)
+            self.make_graph(plot, points, labels)
 
         for point in points:
             point[0] = self.bottom_left[0] + (point[0] - self.x_gridlines[0]) * self.width / (self.x_gridlines[1] * self.x_gridlines[2])

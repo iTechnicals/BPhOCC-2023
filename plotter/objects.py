@@ -52,10 +52,11 @@ class Point:
                 pg.draw.circle(self.plotter.parent.viewport, self.colour, (self.position[0] * self.plotter.parent.viewport_width, self.position[1] * self.plotter.parent.viewport_height), self.thickness)
 
 class Text:
-    def __init__(self, plotter, text, position, colour, font, size, bold=False, italic=False, relative=False):
+    def __init__(self, plotter, text, position, colour, font, size, rotation=0, bold=False, italic=False, relative=False):
         self.plotter = plotter
         self.text = text
         self.position = position
+        self.rotation = rotation
         self.colour = pg.Color(colour)
         self.font = font
         self.size = size
@@ -65,6 +66,8 @@ class Text:
 
         self.font_object = pg.freetype.SysFont(self.font, self.size * math.sqrt(self.plotter.parent.viewport_height * self.plotter.parent.viewport_width) / 960, self.bold, self.italic)
         self.text_object, self.rect = self.font_object.render(self.text, self.colour)
+        self.text_object = pg.transform.rotate(self.text_object, self.rotation)
+        self.rect = self.text_object.get_rect()
         self.rect.center = (self.plotter.parent.viewport_width * self.position[0], self.plotter.parent.viewport_height * self.position[1]) if self.relative else self.position
 
     def draw(self):
@@ -73,4 +76,6 @@ class Text:
     def update_resolution(self):
         self.font_object = pg.freetype.SysFont(self.font, self.size * math.sqrt(self.plotter.parent.viewport_height * self.plotter.parent.viewport_width) / 960, self.bold, self.italic)
         self.text_object, self.rect = self.font_object.render(self.text, self.colour)
+        self.text_object = pg.transform.rotate(self.text_object, self.rotation)
+        self.rect = self.text_object.get_rect()
         self.rect.center = (self.plotter.parent.viewport_width * self.position[0], self.plotter.parent.viewport_height * self.position[1]) if self.relative else self.position

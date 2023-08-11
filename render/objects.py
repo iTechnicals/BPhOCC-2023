@@ -46,9 +46,10 @@ from render.matrices import *
 
 class Point:
     def __init__(
-        self, render, position, size, colour, moving, movement_function, preset_args, id
+        self, render, toggle, position, size, colour, moving, movement_function, preset_args, id
     ):
         self.render = render
+        self.toggle = toggle
         self.position = np.array([*position, 1.0])
         self.colour = colour
         self.size = size
@@ -132,16 +133,16 @@ class PointlessLine:
     def camera_distance(self):
         return (
             max(
-                self.render.camera_distance_table[self.point1_hash],
-                self.render.camera_distance_table[self.point1_hash],
+                self.render.distance_tables[self.parent.toggle][self.point1_hash],
+                self.render.distance_tables[self.parent.toggle][self.point1_hash],
             )
             + 1
         )
 
     def draw(self):
         # print(self.render.cos_angle_between_table[self.point1_hash], self.render.camera.cos_angle_between(self.render.points_table[self.point1_hash] - self.render.camera.position))
-        cos_angle_between_1 = self.render.cos_angle_between_table[self.point1_hash]
-        cos_angle_between_2 = self.render.cos_angle_between_table[self.point2_hash]
+        cos_angle_between_1 = self.render.cos_tables[self.parent.toggle][self.point1_hash]
+        cos_angle_between_2 = self.render.cos_tables[self.parent.toggle][self.point2_hash]
         self.renderable = (
             cos_angle_between_1 > self.render.camera.d_cos_fov
             and cos_angle_between_2 > self.render.camera.d_cos_fov
@@ -154,8 +155,10 @@ class PointlessLine:
         )
 
         if self.renderable:
-            p1 = self.render.projected_points_table[self.point1_hash]
-            p2 = self.render.projected_points_table[self.point2_hash]
+            p1 = self.render.projected_tables[self.parent.toggle][self.point1_hash]
+            p2 = self.render.projected_tables[self.parent.toggle][self.point2_hash]
+            # print(self.render.point_tables[self.parent.toggle][self.point1_hash], self.render.point_tables[self.parent.toggle][self.point2_hash])
+            # print(p1, p2)
             d = (p2[0] - p1[0], p2[1] - p1[1])
             l = math.hypot(*d)
             sp = (
@@ -179,6 +182,7 @@ class MultiLine:
     def __init__(
         self,
         render,
+        toggle,
         f,
         preset_args,
         segments,
@@ -190,8 +194,10 @@ class MultiLine:
         fading=False,
         duration=0,
         fading_function=lambda x: 1 - x,
+        t_max = 1
     ):
         self.render = render
+        self.toggle = toggle
         self.f = f
         self.preset_args = preset_args
         self.colour = pg.Color(colour)
@@ -202,6 +208,7 @@ class MultiLine:
         self.fading = fading
         self.visible = True
         self.hidden = False
+        self.t_max = t_max
 
         if self.fading:
             self.fading_function = fading_function
@@ -214,12 +221,12 @@ class MultiLine:
     def generate_sublines(self, segments):
         self.segments = segments
         self.sublines = []
-        self.hash_start = len(self.render.points_table)
+        self.hash_start = len(self.render.point_tables[self.toggle])
 
         for i in range(self.segments + 1):
-            t = i / self.segments  # TODO: stop overlapping at multiline join points
+            t = self.t_max * i / self.segments  # TODO: stop overlapping at multiline join points
             p = np.array([*self.f(t, *self.preset_args), 1.0])
-            self.render.points_table = np.append(self.render.points_table, np.array([p]), axis=0)
+            self.render.point_tables[self.toggle] = np.append(self.render.point_tables[self.toggle], np.array([p]), axis=0)
 
             if i == self.segments:
                 break
